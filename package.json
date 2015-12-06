@@ -1,0 +1,34 @@
+{
+  "name": "figroll-cli",
+  "version": "0.0.1",
+  "description": "CLI to upload to the Figroll Static Site hosting service",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/reactor10/figroll-cli"
+  },
+  "keywords": [
+    "figroll",
+    "static",
+    "site",
+    "cli"
+  ],
+  "author": "Byron Williams",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/reactor10/figroll-cli/issues"
+  },
+  "homepage": "https://github.com/reactor10/figroll-cli",
+  "dependencies": {
+    "read": "^1.0.7",
+    "request": "^2.65.0",
+    "toml-js": "0.0.8",
+    "user-home": "^2.0.0",
+    "yargs": "^3.30.0"
+  },
+  "preferGlobal": true,
+  "main": "./cli.js",
+  "bin" : { "figroll" : "./cli.js" }
+}
