@@ -17,6 +17,12 @@ var argv = require('yargs')
             .argv;
     })
 
+    .command('create', 'Create a new site', function(yargs) {
+        argv = yargs.demand(2, 2)
+            .example("$0 create sitename.com")
+            .argv;
+    })
+
     .command('connect', 'Connect to your site', function(yargs) {
         argv = yargs.demand(2, 2)
             .example("$0 connect sitename.com")
@@ -226,6 +232,30 @@ function testToken(token) {
     });
 }
 
+function create(globalConfig) {
+    return new Promise(function(resolve, reject) {
+        request.post({
+            url: 'https://app.figroll.io:2113/sites',
+            headers: {
+                "Authorization": globalConfig.token
+            },
+            json: {
+                fqdn: argv._[1]
+            }
+        }).on("response", function(res) {
+            if(res.statusCode !== 201) {
+                reject(res.statusCode);
+                return;
+            }
+
+            return resolve(true);
+        }).on("error", function(e, r) {
+            console.log("error")
+            return reject(r);
+        });
+    });
+}
+
 function connect(cfg) {
     return new Promise(function(resolve, reject) {
         list(cfg).then(function(body) {
@@ -245,15 +275,13 @@ function connect(cfg) {
             try {
                 fd = fs.openSync("figroll.toml", "w+");
             } catch(e) {
-                reject(e);
-                return;
+                return reject(e);
             }
 
             try {
                 parsed = toml.parse(fs.readFileSync(fd).toString());
             } catch(e) {
-                reject(e);
-                return;
+                return reject(e);
             }
 
             parsed.siteId = site.id;
@@ -267,13 +295,10 @@ function connect(cfg) {
             try {
                 fs.writeFileSync(fd, toml.dump(parsed));
             } catch(e) {
-                reject(e);
-                return;
+                return reject(e);
             }
 
-            resolve();
-
-            return;
+            return resolve();
         }).catch(reject);
     });
 }
@@ -368,6 +393,33 @@ switch(argv._[0]) {
                 console.log(e);
                 console.log("could not save token");
             })
+        break;
+    case "create":
+        getGlobalConfig(path)
+            .then(testGlobalConfig)
+            .catch(function(e) {
+                console.log(e);
+                console.log("Config could not be read");
+                console.log("Try logging in");
+            })
+            .then(create)
+            .then(function() {
+                console.log("Site Created - you'll need to run connect now!");
+            })
+            .catch(function(e) {
+                console.log("Site not created")
+                switch(e) {
+                    case 400:
+                        console.log("Incorrect Domain name specified");
+                        break;
+                    case 409:
+                        console.log("Site already exists");
+                        break;
+                    default:
+                        console.log(e);
+                        break;
+                }
+            });
         break;
     case "connect":
         getGlobalConfig(path)
