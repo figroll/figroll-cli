@@ -378,121 +378,140 @@ function activate(cfgs, version) {
     });
 };
 
+function doLogin() {
+    login()
+        .catch(function() {
+            console.log("could not login - your username and password are probably incorrect");
+        })
+        .then(saveToken)
+        .then(function() {
+            console.log("  You are now logged in");
+            console.log("")
+        })
+        .catch(function(e) {
+            console.log(e);
+            console.log("could not save token");
+        });
+}
+
+function doCreate() {
+    getGlobalConfig(path)
+        .then(testGlobalConfig)
+        .catch(function(e) {
+            console.log(e);
+            console.log("Config could not be read");
+            console.log("Try logging in");
+        })
+        .then(create)
+        .then(function() {
+            console.log("Site Created - you'll need to run connect now!");
+        })
+        .catch(function(e) {
+            console.log("Site not created")
+            switch(e) {
+                case 400:
+                    console.log("Incorrect Domain name specified");
+                    break;
+                case 409:
+                    console.log("Site already exists");
+                    break;
+                default:
+                    console.log(e);
+                    break;
+            }
+        });
+}
+
+function doConnect() {
+    getGlobalConfig(path)
+        .then(testGlobalConfig)
+        .catch(function(e) {
+            console.log(e);
+            console.log("Config could not be read");
+            console.log("Try logging in");
+        })
+        .then(connect)
+        .then(function() {
+            console.log("Connected!");
+        })
+        .catch(function(e) {
+            console.log(e);
+            console.log("Could not connect")
+        });
+}
+
+function doList() {
+    getGlobalConfig(path)
+        .then(testGlobalConfig)
+        .catch(function(e) {
+            console.log(e);
+            console.log("Config could not be read");
+            console.log("Try logging in");
+        })
+        .then(list)
+        .then(displayList)
+        .catch(function(e) {
+            console.log(e);
+        });
+}
+
+function doDeploy() {
+    getConfig(path)
+        .then(function(cfgs) {
+            let globalConfig = cfgs[0];
+            let localConfig = cfgs[1];
+
+            return new Promise(function(resolve, reject) {
+                testGlobalConfig(globalConfig)
+                    .then(testLocalConfig)
+                    .then(resolve([globalConfig, localConfig]))
+                    .catch(reject);
+            });
+        })
+        .catch(function(e) {
+            console.log(e);
+            console.log("Config could not be read");
+            console.log("Try logging in");
+        })
+        .then(function(cfgs) {
+            return new Promise(function(resolve, reject) {
+                upload(cfgs, argv.f)
+                    .then(function(version) {
+                        return activate(cfgs, version);
+                    })
+                    .then(function(version) {
+                        console.log("Uploaded!");
+                        console.log("")
+                        console.log("  Site on staging at " + version.stagingUrl)
+                        if(argv.e === "prod") {
+                            console.log("  > Site now live at http://" + cfgs[1].fqdn + " <");
+                            console.log("")
+                        }
+                    })
+                    .catch(reject)
+            });
+        })
+        .catch(function(err) {
+            console.log("Could not upload site :(");
+            console.log(err);
+        });
+}
+
 switch(argv._[0]) {
     case "login":
-        login()
-            .catch(function() {
-                console.log("could not login - your username and password are probably incorrect");
-            })
-            .then(saveToken)
-            .then(function() {
-                console.log("  You are now logged in");
-                console.log("")
-            })
-            .catch(function(e) {
-                console.log(e);
-                console.log("could not save token");
-            })
+        doLogin();
         break;
     case "create":
-        getGlobalConfig(path)
-            .then(testGlobalConfig)
-            .catch(function(e) {
-                console.log(e);
-                console.log("Config could not be read");
-                console.log("Try logging in");
-            })
-            .then(create)
-            .then(function() {
-                console.log("Site Created - you'll need to run connect now!");
-            })
-            .catch(function(e) {
-                console.log("Site not created")
-                switch(e) {
-                    case 400:
-                        console.log("Incorrect Domain name specified");
-                        break;
-                    case 409:
-                        console.log("Site already exists");
-                        break;
-                    default:
-                        console.log(e);
-                        break;
-                }
-            });
+        doCreate();
         break;
     case "connect":
-        getGlobalConfig(path)
-            .then(testGlobalConfig)
-            .catch(function(e) {
-                console.log(e);
-                console.log("Config could not be read");
-                console.log("Try logging in");
-            })
-            .then(connect)
-            .then(function() {
-                console.log("Connected!");
-            })
-            .catch(function(e) {
-                console.log(e);
-                console.log("Could not connect")
-            });
+        doConnect();
         break;
     case "list":
-        getGlobalConfig(path)
-            .then(testGlobalConfig)
-            .catch(function(e) {
-                console.log(e);
-                console.log("Config could not be read");
-                console.log("Try logging in");
-            })
-            .then(list)
-            .then(displayList)
-            .catch(function(e) {
-                console.log(e);
-            })
+        doList();
         break;
     case "deploy":
-        getConfig(path)
-            .then(function(cfgs) {
-                let globalConfig = cfgs[0];
-                let localConfig = cfgs[1];
-
-                return new Promise(function(resolve, reject) {
-                    testGlobalConfig(globalConfig)
-                        .then(testLocalConfig)
-                        .then(resolve([globalConfig, localConfig]))
-                        .catch(reject);
-                });
-            })
-            .catch(function(e) {
-                console.log(e);
-                console.log("Config could not be read");
-                console.log("Try logging in");
-            })
-            .then(function(cfgs) {
-                return new Promise(function(resolve, reject) {
-                    upload(cfgs, argv.f)
-                        .then(function(version) {
-                            return activate(cfgs, version);
-                        })
-                        .then(function(version) {
-                            console.log("Uploaded!");
-                            console.log("")
-                            console.log("  Site on staging at " + version.stagingUrl)
-                            if(argv.e === "prod") {
-                                console.log("  > Site now live at http://" + cfgs[1].fqdn + " <");
-                                console.log("")
-                            }
-                        })
-                        .catch(reject)
-                });
-            })
-            .catch(function(err) {
-                console.log("Could not upload site :(");
-                console.log(err);
-            })
-
+        doDeploy();
         break;
     default:
         console.error("`" + argv._[0] + "` is not a valid command");
