@@ -7,6 +7,9 @@ let https = require('https');
 let request = require('request');
 let read = require('read');
 let userHome = require('user-home');
+let yazl = require("yazl");
+let glob = require("glob");
+let numeral = require("numeral");
 
 var argv = require('yargs')
     .usage('Usage: $0 <command> [options]')
@@ -39,7 +42,7 @@ var argv = require('yargs')
         argv = yargs.demand('f')
         .alias('f', 'file')
         .nargs('f', 1)
-        .describe('f', 'File to upload')
+        .describe('f', 'File/Folder to upload')
 
         .demand('env')
         .alias('e', 'env')
@@ -273,27 +276,25 @@ function connect(cfg) {
             let parsed;
 
             try {
-                fd = fs.openSync("figroll.toml", "w+");
+                fd = fs.openSync("figroll.toml", "r+");
             } catch(e) {
                 return reject(e);
             }
 
             try {
-                parsed = toml.parse(fs.readFileSync(fd).toString());
+                let s = fs.readFileSync(fd).toString();
+                parsed = toml.parse(s);
             } catch(e) {
                 return reject(e);
             }
 
-            parsed.siteId = site.id;
-            parsed.fqdn = site.fqdn;
-            parsed.cname = site.cname;
-
-            if(parsed.token) {
-                delete parsed["token"];
-            }
+            var toWrite = parsed;
+            toWrite.siteId = site.id;
+            toWrite.fqdn = site.fqdn;
+            toWrite.cname = site.cname;
 
             try {
-                fs.writeFileSync(fd, toml.dump(parsed));
+                fs.writeFileSync(fd, toml.dump(toWrite));
             } catch(e) {
                 return reject(e);
             }
@@ -333,24 +334,78 @@ function upload(cfgs, zipfileName) {
     let globalConfig = cfgs[0];
     let localConfig = cfgs[1];
 
-    return new Promise(function(resolve, reject) {
-        request.post({
-            url: 'https://app.figroll.io:2113/sites/' + localConfig.siteId + "/upload",
-            formData: {
-                file: fs.createReadStream(zipfileName),
-            },
-            headers: {
-                "Authorization": globalConfig.token
-            },
-            json: true
-        }, function optionalCallback(err, res, body) {
-            if (err || res.statusCode !== 200) {
-              return reject(err, res.statusCode);
-            }
+    var getStream = new Promise(function(resolve, reject) {
+        let stream;
 
-            return resolve(body);
+        if(!fs.lstatSync(zipfileName).isFile()) {
+            let outFn = "/tmp/" + "figroll_zip_" + process.pid + "_output.zip";
+            let ws = fs.createWriteStream(outFn);
+
+            var zipfile = new yazl.ZipFile();
+
+            glob(zipfileName + "/**", function (er, files) {
+                files.forEach(function(filename) {
+                    if(fs.lstatSync(filename).isFile()) {
+                        console.log("Adding " + filename);
+                        zipfile.addFile(filename, filename);
+                    }
+                });
+                zipfile.outputStream.pipe(ws).on("close", function() {
+                    console.log(numeral(fs.statSync(outFn).size).format("0 b"));
+                    resolve([outFn, true]);
+                });
+                zipfile.end();
+            });
+        } else {
+            resolve([zipfileName, false]);
+        }
+    });
+
+    let result = new Promise(function(resolve, reject) {
+        getStream.then(function(details) {
+            let zfn = details[0];
+            let unlinkAfter = details[1];
+
+            console.log("Uploading");
+
+            request.post({
+                url: 'https://app.figroll.io:2113/sites/' + localConfig.siteId + "/upload",
+                formData: {
+                    file: {
+                        value: fs.createReadStream(zfn),
+                        options: {
+                            filename: "public.zip",
+                            contentType: "application/zip"
+                        }
+                    }
+                },
+                headers: {
+                    "Authorization": globalConfig.token
+                },
+                json: true
+            }, function optionalCallback(err, res, body) {
+                console.log(err);
+                if (err || res.statusCode !== 200) {
+                  return reject(err, res.statusCode);
+                }
+
+                return resolve(body);
+            });
         });
     });
+
+    getStream.then(function(details) {
+        let zfn = details[0];
+        let unlinkAfter = details[1];
+
+        result.then(function() {
+            if(unlinkAfter) {
+                fs.unlinkSync(zfn);
+            }
+        });
+    })
+
+    return result;
 }
 
 function activate(cfgs, version) {
@@ -377,6 +432,12 @@ function activate(cfgs, version) {
         });
     });
 };
+
+function configure() {
+    return new Promise(function(resolve, reject) {
+        resolve();
+    });
+}
 
 function doLogin() {
     login()
@@ -475,20 +536,22 @@ function doDeploy() {
         })
         .then(function(cfgs) {
             return new Promise(function(resolve, reject) {
-                upload(cfgs, argv.f)
-                    .then(function(version) {
-                        return activate(cfgs, version);
-                    })
-                    .then(function(version) {
-                        console.log("Uploaded!");
-                        console.log("")
-                        console.log("  Site on staging at " + version.stagingUrl)
-                        if(argv.e === "prod") {
-                            console.log("  > Site now live at http://" + cfgs[1].fqdn + " <");
+                configure(cfgs).then(function() {
+                    upload(cfgs, argv.f)
+                        .then(function(version) {
+                            return activate(cfgs, version);
+                        })
+                        .then(function(version) {
+                            console.log("Uploaded!");
                             console.log("")
-                        }
-                    })
-                    .catch(reject)
+                            console.log("  Site on staging at " + version.stagingUrl)
+                            if(argv.e === "prod") {
+                                console.log("  > Site now live at http://" + cfgs[1].fqdn + " <");
+                                console.log("")
+                            }
+                        })
+                        .catch(reject)
+                    });
             });
         })
         .catch(function(err) {
