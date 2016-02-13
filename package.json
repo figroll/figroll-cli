@@ -1,6 +1,6 @@
 {
   "name": "figroll-cli",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "CLI to upload to the Figroll Static Site hosting service",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,6 +22,8 @@
   },
   "homepage": "https://github.com/reactor10/figroll-cli",
   "dependencies": {
+    "glob": "^7.0.0",
+    "numeral": "^1.5.3",
     "read": "^1.0.7",
     "request": "^2.65.0",
     "toml-js": "0.0.8",
