@@ -22,8 +22,10 @@
   },
   "homepage": "https://github.com/reactor10/figroll-cli",
   "dependencies": {
+    "bash-color": "0.0.4",
     "glob": "^7.0.0",
     "numeral": "^1.5.3",
+    "open": "0.0.5",
     "read": "^1.0.7",
     "request": "^2.65.0",
     "toml-js": "0.0.8",
@@ -39,5 +41,5 @@
   "engineStrict": true,
   "engines": {
     "node": ">=4.0.0"
-  }
+  },
 }
