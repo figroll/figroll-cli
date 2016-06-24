@@ -1,5 +1,4 @@
 # Figroll CLI
-
 Upload your site to Figroll
 
 ## Tutorial
@@ -10,7 +9,7 @@ Upload your site to Figroll
 npm install -g figroll-cli
 ```
 
-### Figroll commands
+### Commands
 
 ```bash
 Usage: figroll <command>
@@ -24,9 +23,6 @@ Commands:
   activate  Activate site to Production
 ```
 
-
-
-
 ### Logging In
 
 You need to login to your existing Figroll account. If you don't have one
@@ -34,12 +30,13 @@ you can register on our website [Register](https://www.figroll.io/).
 
 ```bash
 $ figroll login
+
 Email: <your email>
 Password: <your password>
 ```
 
 ### List
-To show a list of all of your sites hosting on Figroll use:
+To show a list of all of your sites hosted on Figroll use:
 ```bash
 $ figroll list
 ```
@@ -48,15 +45,9 @@ $ figroll list
 Creating a new free site is super simple with:
 ```bash
 $ figroll create
+
 You created site:
     site: bread-171.figroll.it
-```
-
-
-
-
-```bash
-$ cd my-project/
 ```
 
 
@@ -65,6 +56,7 @@ When we are ready to deploy our site, we can simply connect to that site, making
 
 ```bash
 Usage: figroll <command> path/to/dist-folder
+
 $ figroll connect bread-171.figroll.it dist/
 
 ```
@@ -76,7 +68,7 @@ $ figroll deploy
 ```
 
 ### Activate
-Once your happy you can activate that site on production. This also activates HTTPS on your site.
+Once your happy you can activate your site on production. This also activates HTTPS on your site.
 ```bash
 $ figroll activate
 ```
