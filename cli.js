@@ -37,31 +37,31 @@ var argv = require('yargs')
 })
 
 
-// .command('create', 'Create a new site', function(yargs) {
-//     argv = yargs.demand(2, 2)
-//         .example("$0 create sitename.com")
-//
-//     .argv;
-// })
+.command('create', 'Create a new free site', function(yargs) {
+    argv = yargs.demand(1, 1)
+        .example("$0 create")
+
+    .argv;
+})
 
 .command('connect', 'Connect to your site', function(yargs) {
     argv = yargs.demand(3)
-        .usage('Usage: $0 <command> <dist-path>')
-        .example('$0 connect your-site-name.com dist/')
+        .usage('Usage: $0 <command> dist-path')
+        .example('$0 connect sites/my-new-site dist/')
         .argv;
 })
 
-.command('deploy', 'Deploy to Production', function(yargs) {
+.command('deploy', 'Deploy to staging', function(yargs) {
     argv = yargs.demand(1)
         .usage('Usage: $0 <command>')
-        .example('$0 deploy', 'deploy directory to Staging')
+        .example('$0 deploy', 'deploy directory to staging')
         .argv;
 })
 
 .command('activate', 'Activate site to Production', function(yargs) {
     argv = yargs.demand(1)
         .usage('Usage: $0 <command>')
-        .example('$0 activate', 'Activate site to Production')
+        .example('$0 activate', 'Activate site to production')
         .argv;
 })
 
@@ -243,28 +243,50 @@ function testToken(token) {
 }
 
 function create(globalConfig) {
-    return new Promise(function(resolve, reject) {
-        request.post({
-            url: API_URL + '/sites',
-            headers: {
-                "Authorization": globalConfig.token
-            },
-            json: {
-                fqdn: argv._[1]
-            }
-        }).on("response", function(res) {
-            if (res.statusCode !== 201) {
-                reject(res.statusCode);
-                return;
+
+
+    let getFreeDomain = new Promise(function(resolve, reject) {
+        request.get({
+            url: API_URL + '/domains/next',
+            json: true
+        }, function(err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                return reject();
             }
 
-            return resolve(true);
-        }).on("error", function(e, r) {
-            console.log("error")
-            return reject(r);
+            return resolve(body);
         });
     });
+
+    let createFreeSite = new Promise(function(resolve, reject) {
+        getFreeDomain.then(function(body) {
+
+            request.post({
+                url: API_URL + '/sites',
+                headers: {
+                    "Authorization": globalConfig.token
+                },
+                json: {
+                    fqdn: body.fqdn,
+                    plan: "free"
+                }
+            }, function(err, res, body) {
+
+                if (err || res.statusCode !== 201) {
+                    return reject();
+                }
+
+                return resolve(body);
+            });
+
+        })
+    });
+
+    return createFreeSite;
+
 }
+
 
 function connect(cfg) {
     return new Promise(function(resolve, reject) {
@@ -329,6 +351,7 @@ function upload(cfgs) {
             return reject(e);
         }
 
+        console.log(fs.lstatSync(localConfig.distPath).isFile());
         if (!fs.lstatSync(localConfig.distPath).isFile()) {
             let outFn = "/tmp/" + "figroll_zip_" + process.pid + "_output.zip";
             let ws = fs.createWriteStream(outFn);
@@ -416,9 +439,9 @@ function activate(cfgs) {
             }
         }, function(err, resp, body) {
 
-          if (body.length === 0) {
-              return reject("No versions exist");
-          }
+            if (body.length === 0) {
+                return reject("No versions exist");
+            }
 
             body = JSON.parse(body)
             if (err) {
@@ -472,7 +495,7 @@ function doLogin() {
                     console.log('    (use "figroll list")');
                     console.log("")
                     console.log("Connect to a site:");
-                    console.log('    (use "figroll connect <site-domain> [dist-path]")');
+                    console.log('    (use "figroll connect <site-domain> dist-path")');
                 })
                 .catch(function(error) {
                     console.log(color.red("Could not save token."));
@@ -493,8 +516,13 @@ function doCreate() {
             console.log("Try logging in");
         })
         .then(create)
-        .then(function() {
-            console.log("Site Created - you'll need to run connect now!");
+        .then(function(res) {
+            console.log("");
+            console.log("You created site:");
+            console.log(color.green("    site: " + res.fqdn));
+            console.log("")
+            console.log("Connect to a site:");
+            console.log('    (use "figroll connect ' + res.fqdn + ' dist-path")');
         })
         .catch(function(e) {
             console.log("Site not created")
@@ -524,7 +552,6 @@ function doConnect() {
         .then(function(site) {
             console.log("");
             console.log("Connected to:");
-            console.log("");
             console.log(color.green("    site: " + site.fqdn));
             console.log("");
             console.log("Deploy your site:");
@@ -638,16 +665,16 @@ function doActivate() {
                                 open("https://" + cfgs[1].fqdn);
                             })
                             .catch(function(e) {
-                              console.log("Please make sure you are logged in and connected to a site.");
-                              console.log("")
-                              console.log("See commands:");
-                              console.log('    (use "figroll")');
-                              console.log("")
-                              console.log("Connect to a site:");
-                              console.log('    (use "figroll connect <site-domain> [dist-path]")');
-                              console.log("")
-                              console.log("List yours sites:");
-                              console.log('    (use "figroll list")');
+                                console.log("Please make sure you are logged in and connected to a site.");
+                                console.log("")
+                                console.log("See commands:");
+                                console.log('    (use "figroll")');
+                                console.log("")
+                                console.log("Connect to a site:");
+                                console.log('    (use "figroll connect <site-domain> dist-path")');
+                                console.log("")
+                                console.log("List yours sites:");
+                                console.log('    (use "figroll list")');
                             });
                     });
             });
