@@ -55,10 +55,7 @@ You created site:
 When we are ready to deploy our site, we can simply connect to that site, making sure we pass in your built site folder (dist-folder)
 
 ```bash
-Usage: figroll <command> path/to/dist-folder
-
 $ figroll connect bread-171.figroll.it dist/
-
 ```
 
 ### Deploying
