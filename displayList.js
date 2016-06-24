@@ -26,14 +26,17 @@ function displayList(sites) {
         });
     }
 
-    console.log("")
-
     if (freeSites.length > 0) {
+        console.log("")
         console.log("  Free:")
         freeSites.forEach(function(site, idx) {
             console.log("    " + color.green(freeSites[idx]));
         });
     }
+
+    console.log("")
+    console.log("Create a new site:");
+    console.log('    (use "figroll create")');
 
     console.log("")
     console.log("Connect to a site:");

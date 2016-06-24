@@ -351,7 +351,6 @@ function upload(cfgs) {
             return reject(e);
         }
 
-        console.log(fs.lstatSync(localConfig.distPath).isFile());
         if (!fs.lstatSync(localConfig.distPath).isFile()) {
             let outFn = "/tmp/" + "figroll_zip_" + process.pid + "_output.zip";
             let ws = fs.createWriteStream(outFn);
