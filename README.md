@@ -59,13 +59,13 @@ $ figroll connect bread-171.figroll.it dist/
 ```
 
 ### Deploying
-With `figroll deploy` it pushes your site straight up to your staging enviorment.
+With `figroll deploy` it pushes your site straight up to your staging environment.
 ```bash
 $ figroll deploy
 ```
 
 ### Activate
-Once your happy you can activate your site on production. This also activates HTTPS on your site.
+Once your happy you can activate your site on production environment. This also activates HTTPS on your site.
 ```bash
 $ figroll activate
 ```
