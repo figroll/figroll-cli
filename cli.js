@@ -429,7 +429,6 @@ function activate(cfgs) {
 
 
     let versionsPromise = new Promise(function(resolve, reject) {
-
         request.get({
             url: API_URL + '/sites/' + localConfig.siteId + "/versions",
             headers: {
@@ -447,8 +446,6 @@ function activate(cfgs) {
                 return reject(err);
             }
 
-
-
             resolve(body[0]);
         });
     })
@@ -463,7 +460,7 @@ function activate(cfgs) {
                     "Authorization": globalConfig.token
                 },
                 json: version
-            }, function optionalCallback(err, httpResponse, body) {
+            }, function optionalCallback(err, res, body) {
                 if (err) {
                     return reject(err);
                 }
@@ -472,7 +469,28 @@ function activate(cfgs) {
         });
     };
 
-    return versionsPromise.then(activateVersion);
+    let enableLetsEncrypt = function(site) {
+
+        return new Promise(function(resolve, reject) {
+            request.post({
+                url: API_URL + "/sites/" + site.siteId + "/letsencrypt",
+                headers: {
+                    "Authorization": globalConfig.token
+                },
+            }, function optionalCallback(err, res, body) {
+
+                if (err || res.statusCode !== 201) {
+                    return reject(err);
+                }
+
+                return resolve(body);
+            });
+        });
+    }
+
+    return versionsPromise
+      .then(activateVersion)
+      .then(enableLetsEncrypt)
 
 };
 
@@ -661,7 +679,7 @@ function doActivate() {
                                 console.log("");
                                 console.log(color.green("    Production URL: " + cfgs[1].fqdn));
 
-                                open("https://" + cfgs[1].fqdn);
+                                open("http://" + cfgs[1].fqdn);
                             })
                             .catch(function(e) {
                                 console.log("Please make sure you are logged in and connected to a site.");
