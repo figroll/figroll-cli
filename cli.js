@@ -47,7 +47,7 @@ var argv = require('yargs')
 .command('connect', 'Connect to your site', function(yargs) {
     argv = yargs.demand(3)
         .usage('Usage: $0 <command> dist-path')
-        .example('$0 connect sites/my-new-site dist/')
+        .example('$0 connect site-name.com dist/')
         .argv;
 })
 
@@ -116,6 +116,14 @@ function testLocalConfig(cfg) {
 
         return resolve(cfg);
     });
+}
+
+function showLoginError(e) {
+  console.log(color.red("Please login to Figroll!"));
+  console.log("");
+  console.log("Figroll Login:");
+  console.log('    (use "figroll login")');
+  process.exit(1);
 }
 
 function login() {
@@ -190,9 +198,6 @@ function getApiToken(user) {
         },
         json: true
     }, function(err, res, body) {
-
-      console.log(body);
-
         if (err || res.statusCode !== 201) {
             reject(err);
             return;
@@ -205,9 +210,6 @@ function getApiToken(user) {
 }
 
 function saveToken(user) {
-
-  console.log(user);
-
     return new Promise(function(resolve, reject) {
 
         if (!fs.existsSync(dir)) {
@@ -357,7 +359,6 @@ function list(globalConfig) {
             if (err || res.statusCode !== 200) {
                 return reject();
             }
-
             return resolve(body);
         });
     });
@@ -384,7 +385,17 @@ function upload(cfgs) {
             glob(localConfig.distPath + "/**", function(er, files) {
                 files.forEach(function(filename) {
                     if (fs.lstatSync(filename).isFile()) {
-                        zipfile.addFile(filename, filename);
+
+                      var zippedFileName = filename.replace(localConfig.distPath, "")
+
+                      if (zippedFileName.substring(0,1) === "/") {
+                        zippedFileName = zippedFileName.substring(1, zippedFileName.length);
+                      }
+                      console.log(color.green("Adding file to zip..."),
+                        "    " + filename, " => " , zippedFileName);
+
+
+                      zipfile.addFile(filename, zippedFileName);
                     }
                 });
                 zipfile.outputStream.pipe(ws).on("close", function() {
@@ -552,11 +563,7 @@ function doLogin() {
 function doCreate() {
     getGlobalConfig(path)
         .then(testGlobalConfig)
-        .catch(function(e) {
-            console.log(e);
-            console.log("Config could not be read");
-            console.log("Try logging in");
-        })
+        .catch(showLoginError)
         .then(create)
         .then(function(res) {
             console.log("");
@@ -585,11 +592,7 @@ function doCreate() {
 function doConnect() {
     getGlobalConfig(path)
         .then(testGlobalConfig)
-        .catch(function(e) {
-            console.log(e);
-            console.log("Config could not be read");
-            console.log("Try logging in");
-        })
+        .catch(showLoginError)
         .then(connect)
         .then(function(site) {
             console.log("");
@@ -597,7 +600,7 @@ function doConnect() {
             console.log(color.green("    site: " + site.fqdn));
             console.log("");
             console.log("Deploy your site:");
-            console.log('    (use "figroll deploy ' + site.fqdn + '")');
+            console.log('    (use "figroll deploy")');
             console.log("");
             console.log("Read config:");
             console.log('    (use "cat figroll.toml")');
@@ -614,11 +617,13 @@ function doConnect() {
 
 function doList() {
     getGlobalConfig(path)
+        .catch(showLoginError)
         .then(testGlobalConfig)
         .catch(function(e) {
             console.log(e);
             console.log("Config could not be read");
             console.log("Try logging in");
+            return;
         })
         .then(list)
         .then(displayList)
@@ -629,6 +634,7 @@ function doList() {
 
 function doDeploy() {
     getConfig(path)
+        .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
             let localConfig = cfgs[1];
@@ -675,6 +681,7 @@ function doDeploy() {
 
 function doActivate() {
     getConfig(path)
+        .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
             let localConfig = cfgs[1];
