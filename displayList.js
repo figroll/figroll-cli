@@ -20,15 +20,15 @@ function displayList(sites) {
     });
 
     if (proSites.length > 0) {
-        console.log("  Pro:")
+        console.log("Pro:")
         proSites.forEach(function(site, idx) {
             console.log("    " + color.blue(proSites[idx]));
         });
+        console.log("")
     }
 
     if (freeSites.length > 0) {
-        console.log("")
-        console.log("  Free:")
+        console.log("Free:")
         freeSites.forEach(function(site, idx) {
             console.log("    " + color.green(freeSites[idx]));
         });
@@ -40,10 +40,10 @@ function displayList(sites) {
 
     console.log("")
     console.log("Connect to a site:");
-    console.log('  (use "figroll connect <sitedomain> [dist-path]" to connect to your site)');
+    console.log('    (use "figroll connect <sitedomain> path/to/dist-path" to connect to your site)');
 
     if (sites.length > 0) {
-        console.log('  (E.g. figroll connect ' + (sites[0].plan === "paid" ? color.blue(sites[0].fqdn) : color.green(sites[0].fqdn)) + " [dist-path])" );
+        console.log('    (E.g. figroll connect ' + (sites[0].plan === "paid" ? color.blue(sites[0].fqdn) : color.green(sites[0].fqdn)) + " dist/)" );
     }
 }
 
