@@ -1,5 +1,4 @@
 # Figroll CLI
-
 Upload your site to Figroll
 
 ## Tutorial
@@ -10,37 +9,63 @@ Upload your site to Figroll
 npm install -g figroll-cli
 ```
 
-### Logging In
-
-You need to login to your existing Figroll account.
+### Commands
 
 ```bash
-byron@lingon ~/p/spring-270> figroll login
+Usage: figroll <command>
+
+Commands:
+  login     login to Figroll
+  list      list your sites
+  create    Create a new free site
+  connect   Connect to your site
+  deploy    Deploy to staging
+  activate  Activate site to Production
+```
+
+### Logging In
+
+You need to login to your existing Figroll account. If you don't have one
+you can register on our website [Register](https://www.figroll.io/).
+
+```bash
+$ figroll login
+
 Email: <your email>
 Password: <your password>
 ```
 
-### Connecting
+### List
+To show a list of all of your sites hosted on Figroll use:
+```bash
+$ figroll list
+```
 
-You should have created a site on Figroll already. Ensuring that
-you are in your project folder connect up to Figroll
+### Creating a new site
+Creating a new free site is super simple with:
+```bash
+$ figroll create
+
+You created site:
+    site: bread-171.figroll.it
+```
+
+
+### Connecting
+When we are ready to deploy our site, we can simply connect to that site, making sure we pass in your built site folder (dist-folder)
 
 ```bash
-
-byron@lingon ~> cd prj/spring-270
-byron@lingon ~/p/spring-270> figroll list
-1: spring-270.figroll.it
-byron@lingon ~/p/spring-270> figroll connect spring-270.figroll.it
-Connected!
+$ figroll connect bread-171.figroll.it dist/
 ```
 
 ### Deploying
-
+With `figroll deploy` it pushes your site straight up to your staging environment.
 ```bash
-byron@lingon ~/p/spring-270> zip -r public.zip public_html/
-byron@lingon ~/p/spring-270> figroll deploy -f pubilc.zip -e prod
-Uploaded!
+$ figroll deploy
+```
 
-  Site on staging at http://nm1rq3j1f6stk2jd.x.figroll.it
-  > Site now live at http://spring-270.figroll.it <
+### Activate
+Once your happy you can activate your site on production environment. This also activates HTTPS on your site.
+```bash
+$ figroll activate
 ```
