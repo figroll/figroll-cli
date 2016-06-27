@@ -181,7 +181,33 @@ function login() {
     return promise;
 }
 
+function getApiToken(user) {
+  return new Promise(function(resolve, reject) {
+    request.post({
+        url: API_URL + '/tokens?type=api',
+        headers: {
+          Authorization: user.token
+        },
+        json: true
+    }, function(err, res, body) {
+
+      console.log(body);
+
+        if (err || res.statusCode !== 201) {
+            reject(err);
+            return;
+        }
+        user.token = body.value;
+
+        resolve(user);
+    });
+  })
+}
+
 function saveToken(user) {
+
+  console.log(user);
+
     return new Promise(function(resolve, reject) {
 
         if (!fs.existsSync(dir)) {
@@ -286,7 +312,6 @@ function create(globalConfig) {
     return createFreeSite;
 
 }
-
 
 function connect(cfg) {
     return new Promise(function(resolve, reject) {
@@ -502,8 +527,8 @@ function configure() {
 
 function doLogin() {
     login()
+        .then(getApiToken)
         .then(function(user) {
-
             return saveToken(user)
                 .then(function(response) {
                     console.log(color.green("You are now logged in!"));
