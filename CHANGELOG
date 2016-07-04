@@ -1,0 +1,4 @@
+1.0.1 - 4th July 2016
+
++ Allow FIGROLL_APITOKEN to override ~/.figroll/config.toml (token)
++ Allow FIGROLL_SITEID to override ./figroll.toml (siteId)

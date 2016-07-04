@@ -83,11 +83,25 @@ function _getConfig(cfgPath) {
 }
 
 function getGlobalConfig() {
-    return _getConfig(userHome + "/.figroll/config.toml");
+    return new Promise(function(resolve, reject) {
+        _getConfig(userHome + "/.figroll/config.toml").then(function(config) {
+            config.token = process.env.FIGROLL_APITOKEN || config.token
+            resolve(config)
+        }, function(e) {
+            reject(e);
+        })
+    });
 }
 
 function getLocalConfig() {
-    return _getConfig("figroll.toml");
+    return new Promise(function(resolve, reject) {
+        _getConfig("figroll.toml").then(function(config) {
+            config.siteId = process.env.FIGROLL_SITEID || config.siteId
+            resolve(config)
+        }, function(e) {
+            reject(e);
+        });
+    });
 }
 
 function getConfig() {
@@ -104,7 +118,9 @@ function testGlobalConfig(cfg) {
             return reject("token not found in config");
         }
 
-        return resolve(cfg);
+        testToken(cfg.token).then(function() {
+            resolve(cfg);
+        }, reject);
     });
 }
 
@@ -244,35 +260,24 @@ function saveToken(user) {
 }
 
 function testToken(token) {
-    console.log("Testing Authentication");
     return new Promise(function(resolve, reject) {
-        https.get({
-            hostname: "app.figroll.io",
-            port: 2113,
-            path: "/tokens/me",
+        request.get({
+            url: API_URL + '/users/me',
             headers: {
                 "Authorization": token
-            }
-        }).on("response", function(res) {
-            if (res.statusCode !== 200) {
-                console.log("status code does not match" + res.statusCode);
-                reject(false);
-                return;
+            },
+            json: true
+        }, function(err, res, body) {
+            if (err || res.statusCode !== 200) {
+                return reject();
             }
 
-            resolve(true);
-            return;
-        }).on("error", function(e, r) {
-            console.log("error")
-            reject(r);
-            return;
+            return resolve(body);
         });
     });
 }
 
 function create(globalConfig) {
-
-
     let getFreeDomain = new Promise(function(resolve, reject) {
         request.get({
             url: API_URL + '/domains/next',
@@ -619,17 +624,12 @@ function doList() {
     getGlobalConfig(path)
         .catch(showLoginError)
         .then(testGlobalConfig)
-        .catch(function(e) {
-            console.log(e);
-            console.log("Config could not be read");
-            console.log("Try logging in");
-            return;
-        })
         .then(list)
         .then(displayList)
         .catch(function(e) {
-            console.log(e);
-        });
+            console.log("Config could not be read or your token has expired.");
+            return;
+        })
 }
 
 function doDeploy() {
