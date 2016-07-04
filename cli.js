@@ -97,9 +97,17 @@ function getLocalConfig() {
     return new Promise(function(resolve, reject) {
         _getConfig("figroll.toml").then(function(config) {
             config.siteId = process.env.FIGROLL_SITEID || config.siteId
-            resolve(config)
+            config.distPath = process.env.FIGROLL_DISTPATH || config.distPath
+            return resolve(config)
         }, function(e) {
-            reject(e);
+            if (process.env.FIGROLL_SITEID && process.env.FIGROLL_DISTPATH) {
+                var config = {};
+                config.siteId = process.env.FIGROLL_SITEID;
+                config.distPath = process.env.FIGROLL_DISTPATH;
+                return resolve(config)
+            }
+
+            return reject(e);
         });
     });
 }
@@ -110,10 +118,6 @@ function getConfig() {
 
 function testGlobalConfig(cfg) {
     return new Promise(function(resolve, reject) {
-        if (!cfg.userId) {
-            return reject("userId not found in config");
-        }
-
         if (!cfg.token) {
             return reject("token not found in config");
         }
@@ -128,6 +132,10 @@ function testLocalConfig(cfg) {
     return new Promise(function(resolve, reject) {
         if (!cfg.siteId) {
             return reject("siteId not found in config");
+        }
+
+        if (!cfg.distPath) {
+            return reject("distPath not found in config");
         }
 
         return resolve(cfg);
@@ -637,7 +645,6 @@ function doList() {
 function doDeploy() {
     getConfig(path)
         .then(function(cfgs) {
-            console.log(cfgs);
             let globalConfig = cfgs[0];
             let localConfig = cfgs[1];
 
