@@ -583,12 +583,15 @@ function doCreate() {
             switch (e) {
                 case 400:
                     console.log("Incorrect Domain name specified");
+                    process.exit(1);
                     break;
                 case 409:
                     console.log("Site already exists");
+                    process.exit(1);
                     break;
                 default:
                     console.log(e);
+                    process.exit(1);
                     break;
             }
         });
@@ -652,6 +655,7 @@ function doDeploy() {
             console.log("");
             console.log("Try logging in:");
             console.log('    (use "figroll login")');
+            process.exit(1);
         })
         .then(function(cfgs) {
             return new Promise(function(resolve, reject) {
@@ -673,6 +677,7 @@ function doDeploy() {
                             console.log("");
                             console.log("You can fix this:");
                             console.log('    (figroll.toml)');
+                            process.exit(1);
                         });
                 });
             });
