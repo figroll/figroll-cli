@@ -372,6 +372,8 @@ function list(globalConfig) {
 function upload(cfgs) {
     let globalConfig = cfgs[0];
     let localConfig = cfgs[1];
+    console.log(globalConfig)
+    console.log(localConfig)
 
     var getStream = new Promise(function(resolve, reject) {
         let stream;
@@ -679,6 +681,8 @@ function doDeploy() {
                             console.log('    (figroll.toml)');
                             process.exit(1);
                         });
+                }, function() {
+                    process.exit(1);
                 });
             });
         })
