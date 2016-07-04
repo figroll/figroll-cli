@@ -372,8 +372,6 @@ function list(globalConfig) {
 function upload(cfgs) {
     let globalConfig = cfgs[0];
     let localConfig = cfgs[1];
-    console.log(globalConfig)
-    console.log(localConfig)
 
     var getStream = new Promise(function(resolve, reject) {
         let stream;
@@ -638,6 +636,7 @@ function doList() {
 
 function doDeploy() {
     getConfig(path)
+        .then(testGlobalConfig)
         .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
@@ -690,6 +689,7 @@ function doDeploy() {
 
 function doActivate() {
     getConfig(path)
+        .then(testGlobalConfig)
         .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
