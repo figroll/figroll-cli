@@ -435,10 +435,9 @@ function upload(cfgs) {
                         "Authorization": globalConfig.token
                     },
                     json: true
-                }, function optionalCallback(err, res, body) {
-                    // console.log(err);
-                    if (err || res.statusCode !== 200) {
-                        return reject(err, res.statusCode);
+                }, function(err, res, body) {
+                    if (err) {
+                        return reject(err);
                     }
 
                     return resolve(body);
