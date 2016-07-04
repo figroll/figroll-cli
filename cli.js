@@ -109,6 +109,7 @@ function getConfig() {
 }
 
 function testGlobalConfig(cfg) {
+    console.log(testGlobalConfig)
     return new Promise(function(resolve, reject) {
         if (!cfg.userId) {
             return reject("userId not found in config");
@@ -126,6 +127,7 @@ function testGlobalConfig(cfg) {
 
 function testLocalConfig(cfg) {
     return new Promise(function(resolve, reject) {
+        console.log(testLocalConfig);
         if (!cfg.siteId) {
             return reject("siteId not found in config");
         }
@@ -637,26 +639,8 @@ function doList() {
 function doDeploy() {
     getConfig(path)
         .then(testGlobalConfig)
+        .then(testLocalConfig)
         .catch(showLoginError)
-        .then(function(cfgs) {
-            let globalConfig = cfgs[0];
-            let localConfig = cfgs[1];
-
-            return new Promise(function(resolve, reject) {
-                testGlobalConfig(globalConfig)
-                    .then(testLocalConfig)
-                    .then(resolve([globalConfig, localConfig]))
-                    .catch(reject);
-            });
-        })
-        .catch(function(e) {
-            console.log(e);
-            console.log(color.red("Config could not be read"));
-            console.log("");
-            console.log("Try logging in:");
-            console.log('    (use "figroll login")');
-            process.exit(1);
-        })
         .then(function(cfgs) {
             return new Promise(function(resolve, reject) {
                 configure(cfgs).then(function() {
