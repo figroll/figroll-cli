@@ -396,8 +396,8 @@ function upload(cfgs) {
                       if (zippedFileName.substring(0,1) === "/") {
                         zippedFileName = zippedFileName.substring(1, zippedFileName.length);
                       }
-                      console.log(color.green("Adding file to zip..."),
-                        "    " + filename, " => " , zippedFileName);
+                    //   console.log(color.green("Adding file to zip..."),
+                        // "    " + filename, " => " , zippedFileName);
 
 
                       zipfile.addFile(filename, zippedFileName);
@@ -662,6 +662,7 @@ function doDeploy() {
                     console.log(color.green("Uploading..."))
                     upload(cfgs)
                         .then(function(res) {
+                            console.log(res);
                             console.log("");
                             console.log("Your site had been deployed to staging:");
                             console.log("");
