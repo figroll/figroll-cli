@@ -83,11 +83,33 @@ function _getConfig(cfgPath) {
 }
 
 function getGlobalConfig() {
-    return _getConfig(userHome + "/.figroll/config.toml");
+    return new Promise(function(resolve, reject) {
+        _getConfig(userHome + "/.figroll/config.toml").then(function(config) {
+            config.token = process.env.FIGROLL_APITOKEN || config.token
+            resolve(config)
+        }, function(e) {
+            reject(e);
+        })
+    });
 }
 
 function getLocalConfig() {
-    return _getConfig("figroll.toml");
+    return new Promise(function(resolve, reject) {
+        _getConfig("figroll.toml").then(function(config) {
+            config.siteId = process.env.FIGROLL_SITEID || config.siteId
+            config.distPath = process.env.FIGROLL_DISTPATH || config.distPath
+            return resolve(config)
+        }, function(e) {
+            if (process.env.FIGROLL_SITEID && process.env.FIGROLL_DISTPATH) {
+                var config = {};
+                config.siteId = process.env.FIGROLL_SITEID;
+                config.distPath = process.env.FIGROLL_DISTPATH;
+                return resolve(config)
+            }
+
+            return reject(e);
+        });
+    });
 }
 
 function getConfig() {
@@ -96,15 +118,13 @@ function getConfig() {
 
 function testGlobalConfig(cfg) {
     return new Promise(function(resolve, reject) {
-        if (!cfg.userId) {
-            return reject("userId not found in config");
-        }
-
         if (!cfg.token) {
             return reject("token not found in config");
         }
 
-        return resolve(cfg);
+        testToken(cfg.token).then(function() {
+            resolve(cfg);
+        }, reject);
     });
 }
 
@@ -112,6 +132,10 @@ function testLocalConfig(cfg) {
     return new Promise(function(resolve, reject) {
         if (!cfg.siteId) {
             return reject("siteId not found in config");
+        }
+
+        if (!cfg.distPath) {
+            return reject("distPath not found in config");
         }
 
         return resolve(cfg);
@@ -244,35 +268,24 @@ function saveToken(user) {
 }
 
 function testToken(token) {
-    console.log("Testing Authentication");
     return new Promise(function(resolve, reject) {
-        https.get({
-            hostname: "app.figroll.io",
-            port: 2113,
-            path: "/tokens/me",
+        request.get({
+            url: API_URL + '/users/me',
             headers: {
                 "Authorization": token
-            }
-        }).on("response", function(res) {
-            if (res.statusCode !== 200) {
-                console.log("status code does not match" + res.statusCode);
-                reject(false);
-                return;
+            },
+            json: true
+        }, function(err, res, body) {
+            if (err || res.statusCode !== 200) {
+                return reject();
             }
 
-            resolve(true);
-            return;
-        }).on("error", function(e, r) {
-            console.log("error")
-            reject(r);
-            return;
+            return resolve(body);
         });
     });
 }
 
 function create(globalConfig) {
-
-
     let getFreeDomain = new Promise(function(resolve, reject) {
         request.get({
             url: API_URL + '/domains/next',
@@ -391,8 +404,8 @@ function upload(cfgs) {
                       if (zippedFileName.substring(0,1) === "/") {
                         zippedFileName = zippedFileName.substring(1, zippedFileName.length);
                       }
-                      console.log(color.green("Adding file to zip..."),
-                        "    " + filename, " => " , zippedFileName);
+                    //   console.log(color.green("Adding file to zip..."),
+                        // "    " + filename, " => " , zippedFileName);
 
 
                       zipfile.addFile(filename, zippedFileName);
@@ -430,10 +443,9 @@ function upload(cfgs) {
                         "Authorization": globalConfig.token
                     },
                     json: true
-                }, function optionalCallback(err, res, body) {
-                    // console.log(err);
-                    if (err || res.statusCode !== 200) {
-                        return reject(err, res.statusCode);
+                }, function(err, res, body) {
+                    if (err) {
+                        return reject(err);
                     }
 
                     return resolve(body);
@@ -578,12 +590,15 @@ function doCreate() {
             switch (e) {
                 case 400:
                     console.log("Incorrect Domain name specified");
+                    process.exit(1);
                     break;
                 case 409:
                     console.log("Site already exists");
+                    process.exit(1);
                     break;
                 default:
                     console.log(e);
+                    process.exit(1);
                     break;
             }
         });
@@ -619,22 +634,16 @@ function doList() {
     getGlobalConfig(path)
         .catch(showLoginError)
         .then(testGlobalConfig)
-        .catch(function(e) {
-            console.log(e);
-            console.log("Config could not be read");
-            console.log("Try logging in");
-            return;
-        })
         .then(list)
         .then(displayList)
         .catch(function(e) {
-            console.log(e);
-        });
+            console.log("Config could not be read or your token has expired.");
+            return;
+        })
 }
 
 function doDeploy() {
     getConfig(path)
-        .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
             let localConfig = cfgs[1];
@@ -652,6 +661,7 @@ function doDeploy() {
             console.log("");
             console.log("Try logging in:");
             console.log('    (use "figroll login")');
+            process.exit(1);
         })
         .then(function(cfgs) {
             return new Promise(function(resolve, reject) {
@@ -659,6 +669,7 @@ function doDeploy() {
                     console.log(color.green("Uploading..."))
                     upload(cfgs)
                         .then(function(res) {
+                            console.log(res);
                             console.log("");
                             console.log("Your site had been deployed to staging:");
                             console.log("");
@@ -673,7 +684,10 @@ function doDeploy() {
                             console.log("");
                             console.log("You can fix this:");
                             console.log('    (figroll.toml)');
+                            process.exit(1);
                         });
+                }, function() {
+                    process.exit(1);
                 });
             });
         })
@@ -681,6 +695,7 @@ function doDeploy() {
 
 function doActivate() {
     getConfig(path)
+        .then(testGlobalConfig)
         .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
