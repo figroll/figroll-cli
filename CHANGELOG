@@ -1,4 +1,14 @@
+1.0.3 - 5th July 2016
+
++ Fixed Activate function, failed due to config promises
+
+1.0.2 - 5th July 2016
+
++ Revert to 1.00
+
 1.0.1 - 4th July 2016
 
 + Allow FIGROLL_APITOKEN to override ~/.figroll/config.toml (token)
 + Allow FIGROLL_SITEID to override ./figroll.toml (siteId)
+
+1.0.0
