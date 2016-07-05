@@ -1,3 +1,7 @@
+1.0.4 - 5th July 2016
+
++ Getting production site for CI 
+
 1.0.3 - 5th July 2016
 
 + Fixed Activate function, failed due to config promises
