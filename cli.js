@@ -404,8 +404,8 @@ function upload(cfgs) {
                       if (zippedFileName.substring(0,1) === "/") {
                         zippedFileName = zippedFileName.substring(1, zippedFileName.length);
                       }
-                    //   console.log(color.green("Adding file to zip..."),
-                        // "    " + filename, " => " , zippedFileName);
+                      console.log(color.green("Adding file to zip..."),
+                        "    " + filename, " => " , zippedFileName);
 
 
                       zipfile.addFile(filename, zippedFileName);
@@ -473,8 +473,6 @@ function upload(cfgs) {
 function activate(cfgs) {
     let globalConfig = cfgs[0];
     let localConfig = cfgs[1];
-
-
 
     let versionsPromise = new Promise(function(resolve, reject) {
         request.get({
@@ -669,7 +667,6 @@ function doDeploy() {
                     console.log(color.green("Uploading..."))
                     upload(cfgs)
                         .then(function(res) {
-                            console.log(res);
                             console.log("");
                             console.log("Your site had been deployed to staging:");
                             console.log("");
@@ -695,8 +692,6 @@ function doDeploy() {
 
 function doActivate() {
     getConfig(path)
-        .then(testGlobalConfig)
-        .catch(showLoginError)
         .then(function(cfgs) {
             let globalConfig = cfgs[0];
             let localConfig = cfgs[1];
@@ -714,6 +709,7 @@ function doActivate() {
             console.log("");
             console.log("Try logging in:");
             console.log('    (use "figroll login")');
+            process.exit(1);
         })
         .then(function(cfgs) {
             return new Promise(function(resolve, reject) {
