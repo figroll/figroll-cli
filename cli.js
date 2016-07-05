@@ -741,14 +741,13 @@ function doActivate() {
                         activate(cfgs)
                             .then(function(res) {
                               getSite(cfgs)
-                                  .then(function(res) {
-                                    let productionUrl = res.fqdn;
+                                  .then(function(site) {
+                                    let productionUrl = "http://" + site.fqdn;
                                     console.log("");
                                     console.log("Your site had been deployed to production:");
                                     console.log("");
                                     console.log(color.green("    Production URL: " + productionUrl));
-
-                                    open("http://" + productionUrl);
+                                    open(productionUrl);
                                   }).catch(function(e) {
                                     console.log(e)
                                   })
