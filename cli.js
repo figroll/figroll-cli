@@ -143,11 +143,11 @@ function testLocalConfig(cfg) {
 }
 
 function showLoginError(e) {
-  console.log(color.red("Please login to Figroll!"));
-  console.log("");
-  console.log("Figroll Login:");
-  console.log('    (use "figroll login")');
-  process.exit(1);
+    console.log(color.red("Please login to Figroll!"));
+    console.log("");
+    console.log("Figroll Login:");
+    console.log('    (use "figroll login")');
+    process.exit(1);
 }
 
 function login() {
@@ -214,23 +214,23 @@ function login() {
 }
 
 function getApiToken(user) {
-  return new Promise(function(resolve, reject) {
-    request.post({
-        url: API_URL + '/tokens?type=api',
-        headers: {
-          Authorization: user.token
-        },
-        json: true
-    }, function(err, res, body) {
-        if (err || res.statusCode !== 201) {
-            reject(err);
-            return;
-        }
-        user.token = body.value;
+    return new Promise(function(resolve, reject) {
+        request.post({
+            url: API_URL + '/tokens?type=api',
+            headers: {
+                Authorization: user.token
+            },
+            json: true
+        }, function(err, res, body) {
+            if (err || res.statusCode !== 201) {
+                reject(err);
+                return;
+            }
+            user.token = body.value;
 
-        resolve(user);
-    });
-  })
+            resolve(user);
+        });
+    })
 }
 
 function saveToken(user) {
@@ -399,16 +399,16 @@ function upload(cfgs) {
                 files.forEach(function(filename) {
                     if (fs.lstatSync(filename).isFile()) {
 
-                      var zippedFileName = filename.replace(localConfig.distPath, "")
+                        var zippedFileName = filename.replace(localConfig.distPath, "")
 
-                      if (zippedFileName.substring(0,1) === "/") {
-                        zippedFileName = zippedFileName.substring(1, zippedFileName.length);
-                      }
-                      console.log(color.green("Adding file to zip..."),
-                        "    " + filename, " => " , zippedFileName);
+                        if (zippedFileName.substring(0, 1) === "/") {
+                            zippedFileName = zippedFileName.substring(1, zippedFileName.length);
+                        }
+                        console.log(color.green("Adding file to zip..."),
+                            "    " + filename, " => ", zippedFileName);
 
 
-                      zipfile.addFile(filename, zippedFileName);
+                        zipfile.addFile(filename, zippedFileName);
                     }
                 });
                 zipfile.outputStream.pipe(ws).on("close", function() {
@@ -497,6 +497,7 @@ function activate(cfgs) {
     })
 
 
+
     let activateVersion = function(version) {
         version.isLive = true;
         return new Promise(function(resolve, reject) {
@@ -535,10 +536,32 @@ function activate(cfgs) {
     }
 
     return versionsPromise
-      .then(activateVersion)
-      .then(enableLetsEncrypt)
+        .then(activateVersion)
+        .then(enableLetsEncrypt)
 
 };
+
+
+function getProductionSite(cfgs) {
+    let globalConfig = cfgs[0];
+    let localConfig = cfgs[1];
+    return new Promise(function(resolve, reject) {
+        request.get({
+            url: API_URL + '/sites/' + cfgs[1].siteId,
+            json: true,
+            headers: {
+                "Authorization": globalConfig.token
+            }
+        }, function(err, res, body) {
+
+            if (err || res.statusCode !== 200) {
+                reject();
+            }
+            resolve(body.fqdn);
+        });
+    });
+}
+
 
 function configure() {
     return new Promise(function(resolve, reject) {
@@ -717,12 +740,18 @@ function doActivate() {
                     .then(function() {
                         activate(cfgs)
                             .then(function(res) {
-                                console.log("");
-                                console.log("Your site had been deployed to production:");
-                                console.log("");
-                                console.log(color.green("    Production URL: " + cfgs[1].fqdn));
+                              getProductionSite(cfgs)
+                                  .then(function(res) {
+                                    let productionUrl = res;
+                                    console.log("");
+                                    console.log("Your site had been deployed to production:");
+                                    console.log("");
+                                    console.log(color.green("    Production URL: " + productionUrl));
 
-                                open("http://" + cfgs[1].fqdn);
+                                    open("http://" + productionUrl);
+                                  }).catch(function(e) {
+                                    console.log(e)
+                                  })
                             })
                             .catch(function(e) {
                                 console.log("Please make sure you are logged in and connected to a site.");
