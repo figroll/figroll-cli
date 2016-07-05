@@ -542,12 +542,12 @@ function activate(cfgs) {
 };
 
 
-function getProductionSite(cfgs) {
+function getSite(cfgs) {
     let globalConfig = cfgs[0];
     let localConfig = cfgs[1];
     return new Promise(function(resolve, reject) {
         request.get({
-            url: API_URL + '/sites/' + cfgs[1].siteId,
+            url: API_URL + '/sites/' + localConfig.siteId,
             json: true,
             headers: {
                 "Authorization": globalConfig.token
@@ -557,7 +557,7 @@ function getProductionSite(cfgs) {
             if (err || res.statusCode !== 200) {
                 reject();
             }
-            resolve(body.fqdn);
+            resolve(body);
         });
     });
 }
@@ -740,9 +740,9 @@ function doActivate() {
                     .then(function() {
                         activate(cfgs)
                             .then(function(res) {
-                              getProductionSite(cfgs)
+                              getSite(cfgs)
                                   .then(function(res) {
-                                    let productionUrl = res;
+                                    let productionUrl = res.fqdn;
                                     console.log("");
                                     console.log("Your site had been deployed to production:");
                                     console.log("");
