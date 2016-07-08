@@ -1,6 +1,10 @@
+1.0.5 - 8th July 2016
+
++ Disable Letsencrypt as it's handled in the backend.
+
 1.0.4 - 5th July 2016
 
-+ Getting production site for CI 
++ Getting production site for CI
 
 1.0.3 - 5th July 2016
 

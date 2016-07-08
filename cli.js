@@ -536,8 +536,8 @@ function activate(cfgs) {
     }
 
     return versionsPromise
-        .then(activateVersion)
-        .then(enableLetsEncrypt)
+        .then(activateVersion);
+        // .then(enableLetsEncrypt)
 
 };
 
