@@ -14,28 +14,24 @@ let numeral = require("numeral");
 let color = require("bash-color");
 var open = require("open");
 
-let displayList = require('./displayList');
 
+/*
+ * CLI Commands
+ *
+ */
 var argv = require('yargs')
     .usage('Usage: $0 <command> [options]')
 
-// .option("h", {
-//     alias: "h",
-//     description: "Help"
-// })
-
 .command('login', 'login to Figroll', function(yargs) {
-    argv = yargs.demand(1)
-        .example('$0 login', 'login to Figroll')
-        .argv;
-})
-
-.command('list', 'list your sites', function(yargs) {
-    argv = yargs.demand(1, 1)
-        .example("$0 list")
-        .argv;
-})
-
+        argv = yargs.demand(1)
+            .example('$0 login', 'login to Figroll')
+            .argv;
+    })
+    .command('list', 'list your sites', function(yargs) {
+        argv = yargs.demand(1, 1)
+            .example("$0 list")
+            .argv;
+    })
 
 .command('create', 'Create a new free site', function(yargs) {
     argv = yargs.demand(1, 1)
@@ -68,17 +64,67 @@ var argv = require('yargs')
 .demand(1, "")
     .argv;
 
+
+/*
+ * Setting up functions
+ *
+ */
 let dir = userHome + "/.figroll";
 let path = dir + "/config.toml";
 const API_URL = "https://app.figroll.io/api";
 
+let displayList = require('./displayList');
+
+function _checkForTomlFile() {
+    return new Promise(function(resolve, reject) {
+        fs.stat('./figroll.toml', function(error, stats) {
+            if (error) {
+                return reject("Can't find toml file!")
+            } else {
+                return resolve('Found toml file');
+            }
+        });
+    });
+}
+
+function _checkForJsonFile() {
+    return new Promise(function(resolve, reject) {
+        fs.stat('./figroll.json', function(error, stats) {
+            if (error) {
+                return reject("Can't find json file")
+            } else {
+                return resolve('Found json file');
+            }
+        });
+    });
+}
+
+function _convertTomlFile() {
+    return new Promise(function(resolve, reject) {
+        fs.readFile('./figroll.toml', function(error, data) {
+            var parsed = toml.parse(data);
+            var figrollJson = fs.openSync("figroll.json", "w");
+            try {
+                fs.writeFileSync(figrollJson, JSON.stringify(parsed, null, 4));
+                fs.unlink('./figroll.toml', function(error) {
+                    return resolve("Converted figroll.toml to figroll.json");
+                });
+            } catch (e) {
+                return reject(e);
+            }
+        });
+    });
+}
+
 function _getConfig(cfgPath) {
     return new Promise(function(resolve, reject) {
-        try {
+        doConfig().then(function() {
+          try {
             return resolve(toml.parse(fs.readFileSync(cfgPath).toString()));
-        } catch (e) {
+          } catch (e) {
             return reject(e);
-        }
+          }
+        })
     });
 }
 
@@ -740,17 +786,17 @@ function doActivate() {
                     .then(function() {
                         activate(cfgs)
                             .then(function(res) {
-                              getSite(cfgs)
-                                  .then(function(site) {
-                                    let productionUrl = "http://" + site.fqdn;
-                                    console.log("");
-                                    console.log("Your site had been deployed to production:");
-                                    console.log("");
-                                    console.log(color.green("    Production URL: " + productionUrl));
-                                    open(productionUrl);
-                                  }).catch(function(e) {
-                                    console.log(e)
-                                  })
+                                getSite(cfgs)
+                                    .then(function(site) {
+                                        let productionUrl = "http://" + site.fqdn;
+                                        console.log("");
+                                        console.log("Your site had been deployed to production:");
+                                        console.log("");
+                                        console.log(color.green("    Production URL: " + productionUrl));
+                                        open(productionUrl);
+                                    }).catch(function(e) {
+                                        console.log(e)
+                                    })
                             })
                             .catch(function(e) {
                                 console.log("Please make sure you are logged in and connected to a site.");
@@ -767,6 +813,32 @@ function doActivate() {
                     });
             });
         })
+}
+
+function doConfig() {
+  return new Promise(function(resolve, reject) {
+    _checkForTomlFile()
+        .then(function(response) {
+            // console.log(color.green(response));
+            _convertTomlFile()
+                .then(function(response) {
+                    console.log("");
+                    console.log("");
+                    console.log("************");
+                    console.log("");
+                    console.log("Update:");
+                    console.log("    ", color.green(response));
+                    console.log("");
+                    console.log("************");
+                    console.log("");
+                    return resolve();
+                }, function(error) {
+                    return reject(error);
+                });
+        }, function(error) {
+            return resolve();
+        })
+  })
 }
 
 switch (argv._[0]) {
